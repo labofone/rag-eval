@@ -1,0 +1,27 @@
+[project]
+name = "rageval"
+version = "0.1.0"
+description = "RAG evaluation API."
+authors = [
+    {name = "Ayat Aboalnaga",email = "ayat.aboalnaga@gmail.com"}
+]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi (>=0.115.12,<0.116.0)",
+    "uvicorn (>=0.34.2,<0.35.0)",
+    "ragas (>=0.2.15,<0.3.0)"
+]
+
+[tool.poetry]
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.5"
+pytest-cov = "^6.1.1"
+ruff = "^0.11.7"
+nox = "^2025.2.9"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
