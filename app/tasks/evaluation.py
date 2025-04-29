@@ -11,16 +11,26 @@ from app.schemas.result import EvaluationResult
 redis_client = Redis.from_url(settings.REDIS_URL)
 
 @celery_app.task
-def evaluate_rag_pipeline(context, response):
+def evaluate_rag_pipeline(query, context, response, metrics_list, simulate_failure=False):
+    if simulate_failure:
+        raise ValueError("Simulated task failure for testing")
+
+    # Map metric names to Ragas metric objects
+    ragas_metrics = []
+    if "answer_relevancy" in metrics_list:
+        ragas_metrics.append(answer_relevancy)
+    if "faithfulness" in metrics_list:
+        ragas_metrics.append(faithfulness)
+    if "context_relevancy" in metrics_list:
+        ragas_metrics.append(context_relevancy)
+    # Add other metrics here as they are supported
+
     # Perform Ragas evaluation
     result = evaluate(
         response,
-        metrics=[
-            answer_relevancy,
-            faithfulness,
-            context_relevancy
-        ],
+        metrics=ragas_metrics,
         data={
+            'query': [query],
             'context': [context],
             'response': [response]
         }
