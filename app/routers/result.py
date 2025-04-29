@@ -1,21 +1,50 @@
-from fastapi import APIRouter
+import json
+from fastapi import APIRouter, HTTPException
 from celery.result import AsyncResult
+from redis import Redis
 from app.celery import celery_app
+from app.config.settings import settings
+from app.schemas.result import EvaluationResult
 
 router = APIRouter()
 
-@router.get("/{task_id}", summary="Retrieve evaluation result by task ID")
+# Initialize Redis client
+redis_client = Redis.from_url(settings.REDIS_URL)
+
+@router.get("/{task_id}", summary="Retrieve evaluation result by task ID", response_model=EvaluationResult)
 async def get_result(task_id: str):
     """
-    Retrieves the evaluation result for a given task ID.
+    Retrieves the evaluation result for a given task ID from Redis.
 
     Args:
         task_id (str): The ID of the evaluation task.
 
     Returns:
-        dict: The evaluation result if the task is complete, otherwise the status of the task.
+        EvaluationResult: The evaluation result if found in Redis.
+
+    Raises:
+        HTTPException: If the task result is not found or still processing.
     """
+    # Attempt to fetch result from Redis
+    result_data = redis_client.get(task_id)
+
+    if result_data:
+        # Deserialize and return the result
+        try:
+            result_dict = json.loads(result_data)
+            return EvaluationResult(**result_dict)
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=500, detail="Failed to decode result from Redis")
+
+    # If not in Redis, check Celery task status
     task = AsyncResult(task_id, app=celery_app)
-    if not task.ready():
-        return {"status": "processing"}
-    return task.result
+
+    if task.ready():
+        # Task is ready but result not in Redis (e.g., expired or error during storage)
+        if task.successful():
+             raise HTTPException(status_code=404, detail="Result not found in cache (may have expired)")
+        else:
+             raise HTTPException(status_code=500, detail=f"Task failed: {task.result}")
+    else:
+        # Task is still processing
+        raise HTTPException(status_code=202, detail="Task is still processing")
