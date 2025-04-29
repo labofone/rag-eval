@@ -31,6 +31,6 @@ async def evaluate_batch(payload: EvaluationPayload):
         query=payload.query,
         context=payload.context,
         response=payload.response,
-        metrics=payload.metrics
+        metrics_list=payload.metrics
     )
     return {"task_id": task.id}
