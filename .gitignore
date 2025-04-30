@@ -1,2 +1,59 @@
-memory-bank
-**/__pycache__/
+# Dependencies
+node_modules/
+**/node_modules/
+__pycache__/
+*.py[cod]
+.venv/
+.env/
+
+# Build and distribution
+/dist/
+/build/
+*.egg-info/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Logs and databases
+*.log
+*.sqlite
+*.db
+
+# Machine learning artifacts
+/models/
+/checkpoints/
+*.pkl
+*.h5
+*.pt
+*.onnx
+*.bin
+
+# Large data files and caches
+/data/
+.cache/
+*.csv
+*.json
+*.jsonl
+*.parquet
+*.arrow
+vector_store/
+.embeddings/
+
+# Testing and coverage
+.coverage
+coverage/
+.pytest_cache/
+.hypothesis/
+
+# Temporary files
+*.tmp
+.DS_Store
+
