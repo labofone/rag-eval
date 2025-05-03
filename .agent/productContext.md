@@ -15,3 +15,4 @@ The API receives a query, context, and generated response. It then uses referenc
 - Simple API for easy integration with existing RAG pipelines.
 - Fast evaluation times to enable rapid iteration and experimentation.
 - Clear and interpretable evaluation metrics to facilitate performance analysis.
+- Agentic selection of evaluation metrics based on natural language queries.

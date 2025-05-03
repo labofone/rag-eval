@@ -16,10 +16,11 @@ Integrating Ragas evaluation metrics and implementing asynchronous task processi
 - Moved API key validation logic to `app/dependencies.py`.
 - Modified `app/config/settings.py` to load the API key from environment variables for enhanced security.
 - Implemented Redis result storage and retrieval for evaluation tasks.
+- Implemented agentic evaluation metric selection with a new /metrics/recommend endpoint.
 
 ## Next Steps
 
-- Add more comprehensive tests for all endpoints and functionality.
+- Add more comprehensive tests for all endpoints and functionality, including the new /metrics/recommend endpoint.
 
 ## Active Decisions and Considerations
 

@@ -13,11 +13,13 @@ graph TD
     E --> F[Correctness]
     E --> G[Faithfulness]
     E --> H[Relevancy]
+    B --> K[Metric Recommendation]
     D --> I[(Result Cache)]
     I --> J[Batch Results]
 
     style E fill:#f9d5e5,stroke:#333
     style D fill:#e1f5fe,stroke:#333
+    style K fill:#e1f5fe,stroke:#333
 ```
 
 The system follows a **microservice architecture** with the following components:

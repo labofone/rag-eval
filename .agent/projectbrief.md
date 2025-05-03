@@ -12,8 +12,12 @@ Evaluate RAG pipelines using **reference-free methods**, currently supported:
 
 ## Scope
 
+- Automated RAG pipeline evaluation
+- Agentic evaluation metric selection
+
 ## Key Requirements
 
 - speed
 - simplicity
 - scaleability
+- Agentic metric selection

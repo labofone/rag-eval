@@ -19,13 +19,15 @@ The base FastAPI application is set up with authentication, integrated with Cele
 - Added `pytest` and `httpx` to the `dev` dependencies.
 - Created initial test files (`tests/test_evaluate.py` and `tests/test_result.py`) with test cases for the `/evaluate/batch` and `/results/{task_id}` endpoints.
 - Implemented Redis result storage and retrieval for evaluation tasks.
+- Implemented agentic evaluation metric selection with a new /metrics/recommend endpoint.
 
 ## What's Left to Build
 
-- Refine Ragas evaluation logic and metric selection.
+- Refine Ragas evaluation logic.
 - Enhance security for API key management.
-- Add more comprehensive tests for all endpoints and functionality.
+- Add more comprehensive tests for all endpoints and functionality, including the new /metrics/recommend endpoint.
 
 ## Known Issues
 
 - None at this time.
+- The API key should be read from environment variable.
