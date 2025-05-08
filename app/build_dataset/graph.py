@@ -55,9 +55,21 @@ def node_fetch_initial_results(state: GraphState) -> Dict[str, Any]:
                 logger.warning(f"Skipping result due to missing link: {res.get('title')}")
                 continue
 
+            # Safely extract citation count
+            citation_count = None
+            cited_by_info = res.get('cited_by', {})
+            if isinstance(cited_by_info, dict):
+                count_value = cited_by_info.get('value')
+                if isinstance(count_value, (int, str)) and str(count_value).isdigit():
+                     try:
+                         citation_count = int(count_value)
+                     except ValueError:
+                         logger.warning(f"Could not convert citation count '{count_value}' to int for link: {link}")
+
             initial_results.append(InitialSearchResult(
                 link=link,
                 title=res.get("title"),
+                citation_count=citation_count, # Add parsed count
                 snippet=res.get("snippet"),
                 source_name=res.get("source"),
                 publication_date_str=res.get("publication_date"),
