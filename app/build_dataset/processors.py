@@ -16,13 +16,13 @@ logger = logging.getLogger(__name__)
 def calculate_weighted_quality_score(result: InitialSearchResult) -> float:
     """
     Calculates a weighted quality score for an initial search result.
-    
+
     This is a placeholder implementation based on the plan.
     Weights and criteria should be refined based on data analysis.
-    
+
     Args:
         result: An InitialSearchResult object.
-        
+
     Returns:
         A float representing the quality score. Higher is better.
     """
@@ -87,16 +87,16 @@ def calculate_weighted_quality_score(result: InitialSearchResult) -> float:
     return score
 
 def rank_initial_results(
-    results: List[InitialSearchResult], 
+    results: List[InitialSearchResult],
     top_n: int = 5
 ) -> List[InitialSearchResult]:
     """
     Ranks initial search results by quality score and selects the top N.
-    
+
     Args:
         results: A list of InitialSearchResult objects.
         top_n: The number of top results to select.
-        
+
     Returns:
         A list of the top N InitialSearchResult objects, sorted by score.
     """
@@ -116,15 +116,15 @@ def rank_initial_results(
     # Return top N
     return ranked_results[:top_n]
 
-def process_raw_content_with_markitdown(
+def convert_content_to_markdown(
     full_content_data: FullContentData
 ) -> Optional[ProcessedContent]:
     """
-    Processes raw content (HTML/PDF text) into structured markdown using MarkItDown.
-    
+    Converts raw content (HTML/PDF text) into structured markdown, initially using MarkItDown.
+
     Args:
         full_content_data: A FullContentData object containing raw content.
-        
+
     Returns:
         A ProcessedContent object, or None if processing fails.
     """
@@ -209,7 +209,7 @@ def process_raw_content_with_markitdown(
 #     #     raw_content="<html><body><h1>Test Title</h1><p>Some content here.</p></body></html>",
 #     #     content_type="html"
 #     # )
-#     # processed = process_raw_content_with_markitdown(dummy_full_content)
+#     # processed = convert_content_to_markdown(dummy_full_content) # Updated function name here
 #     # if processed:
 #     #     print("\nProcessed Content:")
 #     #     print(f"Title: {processed.title}")

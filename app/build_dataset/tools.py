@@ -15,16 +15,16 @@ logger = logging.getLogger(__name__)
 # Example: logger.info("Fetching data from SerpAPI")
 
 def search_academic_papers_serpapi(
-    query: str, 
+    query: str,
     num_results: int = 10
 ) -> List[Dict[str, Any]]:
     """
     Performs an academic paper search using SerpAPI.
-    
+
     Args:
         query: The search query.
         num_results: The number of results to fetch.
-        
+
     Returns:
         A list of search result dictionaries from SerpAPI.
         Returns an empty list if the API key is not configured or an error occurs.
@@ -45,7 +45,7 @@ def search_academic_papers_serpapi(
         }
         search = GoogleSearch(params)
         results = search.get_dict()
-        
+
         organic_results = results.get("organic_results", [])
         if not organic_results:
             logger.warning(f"No organic results found for query: {query}")
@@ -53,7 +53,7 @@ def search_academic_papers_serpapi(
             if "error" in results:
                  logger.error(f"SerpAPI error: {results['error']}")
             return []
-            
+
         logger.info(f"SerpAPI returned {len(organic_results)} results for query: {query}")
         return organic_results
 
@@ -65,18 +65,18 @@ def search_academic_papers_serpapi(
         return []
 
 async def download_pdf_async(
-    url: str, 
-    output_dir: Path, 
+    url: str,
+    output_dir: Path,
     file_name: Optional[str] = None
 ) -> Optional[Path]:
     """
     Asynchronously downloads a PDF from a given URL.
-    
+
     Args:
         url: The URL of the PDF to download.
         output_dir: The directory to save the downloaded PDF.
         file_name: Optional name for the PDF file. If None, uses the last part of the URL.
-        
+
     Returns:
         The Path to the downloaded PDF, or None if download fails.
     """
@@ -93,7 +93,7 @@ async def download_pdf_async(
             logger.info(f"Attempting to download PDF from: {url}")
             response = await client.get(url)
             response.raise_for_status() # Raise an exception for bad status codes (4xx or 5xx)
-            
+
             content_type = response.headers.get("content-type", "").lower()
             if "application/pdf" not in content_type:
                 logger.warning(f"URL {url} did not return a PDF. Content-Type: {content_type}. Skipping download.")
@@ -115,13 +115,13 @@ async def download_pdf_async(
         logger.error(f"Unexpected error downloading PDF from {url}: {e}")
         return None
 
-async def fetch_webpage_content_playwright_mcp(url: str) -> Optional[str]:
+async def fetch_webpage_content(url: str) -> Optional[str]:
     """
-    Fetches the main content of a webpage using a Playwright MCP server.
-    
+    Fetches the main content of a webpage, initially using a Playwright MCP server.
+
     Args:
         url: The URL of the webpage to scrape.
-        
+
     Returns:
         The extracted main content as a string, or None if an error occurs or MCP is not configured.
     """
@@ -134,7 +134,7 @@ async def fetch_webpage_content_playwright_mcp(url: str) -> Optional[str]:
             logger.info(f"Fetching webpage content from {url} via Playwright MCP: {settings.PLAYWRIGHT_MCP_URL}")
             response = await client.post(settings.PLAYWRIGHT_MCP_URL, json={"url": url})
             response.raise_for_status()
-            
+
             data = response.json()
             if data.get("status") == "success" and "content" in data:
                 logger.info(f"Successfully fetched content for {url} via Playwright MCP.")
@@ -181,14 +181,14 @@ async def fetch_webpage_content_playwright_mcp(url: str) -> Optional[str]:
 #             # temp_dir.rmdir()
 #         else:
 #             print("PDF download test failed.")
-    
+
 #     async def test_playwright_mcp():
 #         print("\nTesting Playwright MCP...")
 #         # Replace with a URL you want to test scraping
 #         # Ensure your Playwright MCP server is running and configured in .env
 #         if settings.PLAYWRIGHT_MCP_URL:
 #             test_url = "https://blog.langchain.dev/langgraph-cloud/"
-#             content = await fetch_webpage_content_playwright_mcp(test_url)
+#             content = await fetch_webpage_content(test_url) # Updated function name here
 #             if content:
 #                 print(f"Content fetched for {test_url}:\n{content[:500]}...") # Print first 500 chars
 #             else:

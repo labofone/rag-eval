@@ -13,24 +13,24 @@ from .schemas import ProcessedContent
 
 logger = logging.getLogger(__name__)
 
-def upload_to_gcs(
-    bucket_name: str, 
-    source_file_path: Path, 
+def upload_raw_artifact(
+    bucket_name: str,
+    source_file_path: Path,
     destination_blob_name: str
 ) -> Optional[str]:
     """
-    Uploads a file to a Google Cloud Storage bucket.
-    
+    Uploads a raw artifact (file) to a storage backend, initially GCS.
+
     Args:
-        bucket_name: The name of the GCS bucket.
+        bucket_name: The name of the GCS bucket (or equivalent for other backends).
         source_file_path: The local path to the file to upload.
         destination_blob_name: The desired path/name of the blob in the bucket.
-        
+
     Returns:
         The public URL of the uploaded blob, or None if upload fails.
     """
-    if not settings.GCS_BUCKET_NAME:
-        logger.error("GCS_BUCKET_NAME is not configured. Cannot upload to GCS.")
+    if not settings.GCS_BUCKET_NAME: # This check remains specific to GCS for now
+        logger.error("GCS_BUCKET_NAME is not configured. Cannot upload artifact.")
         return None
 
     try:
@@ -73,18 +73,18 @@ def upload_to_gcs(
         return None
 
 def store_processed_content(
-    processed_data: List[ProcessedContent], 
+    processed_data: List[ProcessedContent],
     base_path: str = "research_dataset/phase1"
 ) -> List[ProcessedContent]:
     """
     Stores a list of ProcessedContent objects in GCS.
-    
+
     Each item's markdown content is saved as a separate file.
-    
+
     Args:
         processed_data: A list of ProcessedContent objects.
         base_path: The base path within the GCS bucket to store the data.
-        
+
     Returns:
         The list of ProcessedContent objects with updated gcs_storage_link fields.
     """
@@ -107,12 +107,12 @@ def store_processed_content(
             blob_name = f"{base_path}/{sanitized_url[:100]}_{hash(item.source_url)}.md"
 
             temp_file_path = temp_dir / f"{hash(item.source_url)}.md"
-            
+
             try:
                 with open(temp_file_path, "w", encoding="utf-8") as f:
                     f.write(item.full_text_markdown)
 
-                gcs_link = upload_to_gcs(
+                gcs_link = upload_raw_artifact( # Updated function call
                     settings.GCS_BUCKET_NAME,
                     temp_file_path,
                     blob_name

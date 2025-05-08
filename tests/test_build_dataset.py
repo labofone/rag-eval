@@ -6,9 +6,9 @@ from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 from app.build_dataset.schemas import InitialSearchResult, FullContentData, ProcessedContent
-from app.build_dataset.processors import calculate_weighted_quality_score, rank_initial_results, process_raw_content_with_markitdown
-from app.build_dataset.tools import search_academic_papers_serpapi, download_pdf_async, fetch_webpage_content_playwright_mcp
-from app.build_dataset.storage import upload_to_gcs, store_processed_content
+from app.build_dataset.processors import calculate_weighted_quality_score, rank_initial_results, convert_content_to_markdown # UPDATED
+from app.build_dataset.tools import search_academic_papers_serpapi, download_pdf_async, fetch_webpage_content # UPDATED
+from app.build_dataset.storage import upload_raw_artifact, store_processed_content # UPDATED
 from app.build_dataset.graph import build_data_collection_graph, GraphState # Import for graph testing if needed
 
 # --- Tests for Schemas ---
@@ -214,7 +214,7 @@ def test_rank_initial_results(mock_calculate_score):
     assert rank_initial_results([], top_n=3) == []
 
 @patch('app.build_dataset.processors.MarkItDownConverter') # Mock MarkItDownConverter
-def test_process_raw_content_with_markitdown(mock_converter):
+def test_convert_content_to_markdown(mock_converter): # UPDATED function name
     """Test the raw content processing function."""
     # Mock the converter instance and its convert method
     mock_instance = MagicMock()
@@ -236,16 +236,13 @@ def test_process_raw_content_with_markitdown(mock_converter):
         download_successful=True
     )
 
-    processed = process_raw_content_with_markitdown(full_content)
+    processed = convert_content_to_markdown(full_content) # UPDATED function call
 
     assert processed is not None
     assert processed.source_url == "https://example.com/raw"
     assert processed.title == "Original Title" # Currently takes from original_metadata
     assert processed.abstract == "Original snippet." # Currently takes from original_metadata
     assert processed.full_text_markdown == "# Converted Markdown\nSome text." # Expecting mocked output
-    # Check if MarkItDownConverter and convert were called (if MarkItDown was real)
-    # mock_converter.assert_called_once()
-    # mock_instance.convert.assert_called_once_with(full_content.raw_content)
 
     # Test with empty raw content
     full_content_empty = FullContentData(
@@ -255,7 +252,7 @@ def test_process_raw_content_with_markitdown(mock_converter):
         content_type="html",
         download_successful=True
     )
-    processed_empty = process_raw_content_with_markitdown(full_content_empty)
+    processed_empty = convert_content_to_markdown(full_content_empty) # UPDATED function call
     assert processed_empty is None # Should return None if no raw content
 
 # --- Tests for Tools (Basic mocking) ---
@@ -300,9 +297,9 @@ async def test_download_pdf_async(mock_path, mock_async_client):
 
     mock_output_dir = MagicMock()
     mock_output_path = MagicMock()
-    mock_path.return_value = mock_output_dir # Path(".")
-    mock_output_dir.__truediv__.return_value = mock_output_path # Path("./temp_downloads/file.pdf")
-    mock_output_path.name = "file.pdf" # Simulate path object behavior
+    mock_path.return_value = mock_output_dir
+    mock_output_dir.__truediv__.return_value = mock_output_path
+    mock_output_path.name = "file.pdf"
 
     mock_open = MagicMock()
     mock_file_handle = MagicMock()
@@ -319,7 +316,7 @@ async def test_download_pdf_async(mock_path, mock_async_client):
 
 @patch('app.build_dataset.tools.httpx.AsyncClient')
 @patch('app.build_dataset.tools.settings')
-async def test_fetch_webpage_content_playwright_mcp(mock_settings, mock_async_client):
+async def test_fetch_webpage_content(mock_settings, mock_async_client): # UPDATED function name
     """Test Playwright MCP tool wrapper."""
     mock_settings.PLAYWRIGHT_MCP_URL = "http://fake-mcp:8070/extract"
 
@@ -331,7 +328,7 @@ async def test_fetch_webpage_content_playwright_mcp(mock_settings, mock_async_cl
     mock_client_instance.post.return_value.__aenter__.return_value = mock_response
     mock_async_client.return_value.__aenter__.return_value = mock_client_instance
 
-    content = await fetch_webpage_content_playwright_mcp("http://example.com/page")
+    content = await fetch_webpage_content("http://example.com/page") # UPDATED function call
 
     mock_client_instance.post.assert_awaited_once_with(
         "http://fake-mcp:8070/extract",
@@ -344,10 +341,10 @@ async def test_fetch_webpage_content_playwright_mcp(mock_settings, mock_async_cl
 @patch('app.build_dataset.storage.storage.Client')
 @patch('app.build_dataset.storage.settings')
 @patch('app.build_dataset.storage.Path')
-def test_upload_to_gcs(mock_path, mock_settings, mock_storage_client):
+def test_upload_raw_artifact(mock_path, mock_settings, mock_storage_client): # UPDATED function name
     """Test GCS upload function."""
     mock_settings.GCS_BUCKET_NAME = "fake-bucket"
-    mock_settings.GCS_PROJECT = None # Use ADC
+    mock_settings.GCS_PROJECT = None 
     mock_settings.GCS_SERVICE_ACCOUNT_FILE = None
 
     mock_client_instance = MagicMock()
@@ -360,35 +357,34 @@ def test_upload_to_gcs(mock_path, mock_settings, mock_storage_client):
     mock_bucket_instance.blob.return_value = mock_blob_instance
 
     mock_source_file_path = MagicMock()
-    mock_source_file_path.exists.return_value = True # Simulate file exists
+    mock_source_file_path.exists.return_value = True
 
-    uploaded_url = upload_to_gcs(
+    uploaded_url = upload_raw_artifact( # UPDATED function call
         "fake-bucket",
         mock_source_file_path,
         "fake/destination/blob.md"
     )
 
-    mock_storage_client.assert_called_once_with() # Called with default ADC
+    mock_storage_client.assert_called_once_with()
     mock_client_instance.bucket.assert_called_once_with("fake-bucket")
     mock_bucket_instance.blob.assert_called_once_with("fake/destination/blob.md")
     mock_blob_instance.upload_from_filename.assert_called_once_with(mock_source_file_path)
     assert uploaded_url == "https://storage.googleapis.com/fake-bucket/fake/destination/blob.md"
 
-@patch('app.build_dataset.storage.upload_to_gcs')
+@patch('app.build_dataset.storage.upload_raw_artifact') # UPDATED to mock the new function name
 @patch('app.build_dataset.storage.Path')
 @patch('builtins.open')
-def test_store_processed_content(mock_open, mock_path, mock_upload_to_gcs):
+def test_store_processed_content(mock_open, mock_path, mock_upload_raw_artifact_func): # UPDATED mock name
     """Test storing processed content."""
     mock_temp_dir = MagicMock()
-    mock_path.return_value = mock_temp_dir # Path("./temp_gcs_uploads")
+    mock_path.return_value = mock_temp_dir
     mock_temp_dir.mkdir.return_value = None
-    mock_temp_dir.iterdir.return_value = [MagicMock()] # Simulate temp file exists for cleanup
+    mock_temp_dir.iterdir.return_value = [MagicMock()]
 
     mock_file_handle = MagicMock()
     mock_open.return_value.__enter__.return_value = mock_file_handle
 
-    # Simulate successful upload for the first item, failed for the second
-    mock_upload_to_gcs.side_effect = ["http://gcs.link/file1.md", None]
+    mock_upload_raw_artifact_func.side_effect = ["http://gcs.link/file1.md", None] # UPDATED mock name
 
     dummy_processed_content = [
         ProcessedContent(
@@ -405,18 +401,14 @@ def test_store_processed_content(mock_open, mock_path, mock_upload_to_gcs):
 
     stored_data = store_processed_content(dummy_processed_content, base_path="test_path")
 
-    assert len(stored_data) == 2 # Both items should be returned
+    assert len(stored_data) == 2
     assert stored_data[0].gcs_storage_link == "http://gcs.link/file1.md"
-    assert stored_data[1].gcs_storage_link is None # Second upload failed
+    assert stored_data[1].gcs_storage_link is None
 
-    # Check cleanup was attempted
     mock_temp_dir.iterdir.assert_called()
-    # Check unlink was called for the temp file (mocked)
     mock_temp_dir.iterdir.return_value[0].unlink.assert_called_once()
-    # Check rmdir was called
     mock_temp_dir.rmdir.assert_called_once()
 
-    # Test with empty list
     assert store_processed_content([]) == []
 
 # --- Basic Graph Test (Requires minimal setup) ---
@@ -434,7 +426,6 @@ async def test_build_data_collection_graph_flow(
     mock_fetch_initial_results
 ):
     """Test the basic flow of the LangGraph."""
-    # Mock node return values to simulate state transitions
     mock_fetch_initial_results.return_value = {"initial_search_results": ["result1", "result2"]}
     mock_rank_initial_results.return_value = {"ranked_initial_results": ["ranked1"], "top_n_selected_for_full_fetch": ["ranked1"]}
     mock_fetch_full_content.return_value = {"fetched_full_content": ["full_content1"]}
@@ -443,20 +434,22 @@ async def test_build_data_collection_graph_flow(
 
     graph = build_data_collection_graph()
 
-    # Run the graph with a dummy initial state
     initial_state = GraphState(research_topic="test", current_retry_count=0, error_messages=[])
     final_state = await graph.invoke(initial_state)
 
-    # Assert that each node was called once in the correct order
     mock_fetch_initial_results.assert_called_once()
     mock_rank_initial_results.assert_called_once()
-    mock_fetch_full_content.assert_called_once()
+    mock_fetch_full_content.assert_called_once() # This is an async def, so should be awaited
     mock_process_full_content.assert_called_once()
     mock_store_results.assert_called_once()
 
-    # Assert the final state contains the expected data from the last node
     assert final_state.get("gcs_storage_links") == ["link1"]
-    # Assert intermediate states were passed correctly (checking inputs to mocked nodes)
     mock_rank_initial_results.assert_called_once_with({"research_topic": "test", "current_retry_count": 0, "error_messages": [], "initial_search_results": ["result1", "result2"]})
-    mock_fetch_full_content.assert_awaited_once_with({"research_topic": "test", "current_retry_count": 0, "error_messages": [], "initial_search_results": ["result1", "result2"], "ranked_initial_results": ["ranked1"], "top_n_selected_for_full_fetch": ["ranked1"]})
-    # ... and so on for other nodes
+    # For async functions, use assert_awaited_once_with if the mock itself is an async mock,
+    # or if you are checking arguments to an async function that was awaited.
+    # Here, node_fetch_full_content is async, so its mock should reflect that if we were testing its internals.
+    # However, we are mocking the node function itself, which is called by the graph.
+    # The graph invokes it, and the mock_fetch_full_content is what's called.
+    # If mock_fetch_full_content was an AsyncMock, then assert_awaited_once_with would be appropriate.
+    # Since it's a regular MagicMock here, assert_called_once_with is fine for checking args.
+    mock_fetch_full_content.assert_called_once_with({"research_topic": "test", "current_retry_count": 0, "error_messages": [], "initial_search_results": ["result1", "result2"], "ranked_initial_results": ["ranked1"], "top_n_selected_for_full_fetch": ["ranked1"]})
