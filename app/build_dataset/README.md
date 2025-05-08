@@ -2,8 +2,8 @@
 
 The `buildDataset` feature defines data collection logic and a pipeline to create a dataset that will be used to help the agent recommend RAG evaluation metrics and frameworks based on use case, domain, resources, etc. This dataset ensures that recommendations are grounded in research and practical considerations.
 
-1. **Why not just prompting?** The need for grounding the LLM recommendations and reasoning.
-2. **Why randomly collected data with no ground truth?** There's no ground truth in RAG evaluation. It's a matter of choice, a trade-off between conflicting priorities.
+1. **Why not just prompting?** The need for **grounding** the LLM recommendations and reasoning.
+2. **Why randomly collected data?** There's **no ground truth** in RAG evaluation. It's a matter of choice, a trade-off between conflicting priorities.
 
 ## Data Collection Logic
 
