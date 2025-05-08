@@ -111,21 +111,21 @@ graph TD
     API -->|1. Authenticate| Auth[API Key Auth]
     API -->|2. Submit Task| Celery[Celery Worker]
     API -->|3. Check Results| Redis[(Redis Cache)]
-    
+
     Celery -->|Store Results| Redis
     Celery -->|Run Evaluation| Ragas[Ragas Evaluator]
-    
+
     subgraph "Evaluation Process"
         Ragas -->|1| AR[Answer Relevancy]
         Ragas -->|2| F[Faithfulness]
         Ragas -->|3| CR[Context Relevancy]
     end
-    
+
     classDef primary fill:#2374ab,stroke:#2374ab,color:white;
     classDef secondary fill:#047aa3,stroke:#047aa3,color:white;
     classDef storage fill:#FF9900,stroke:#FF9900,color:white;
     classDef process fill:#1aaa55,stroke:#1aaa55,color:white;
-    
+
     class Client,API primary;
     class Celery,Auth secondary;
     class Redis storage;
@@ -143,11 +143,41 @@ The system consists of several key components:
    - Context Relevancy
 
 The workflow is as follows:
+
 1. Client sends an evaluation request with query, context, and response
 2. API server validates the API key and creates an asynchronous task
 3. Celery worker processes the task using Ragas evaluator
 4. Results are stored in Redis cache
 5. Client can retrieve results using the task ID
+
+## Build Dataset Feature
+
+This feature allows for the automated collection and processing of research papers based on a predefined list of topics to build a dataset for evaluation purposes.
+
+### Configuration
+
+1.  Copy the `.env.example` file to `.env` in the project root:
+    ```bash
+    cp .env.example .env
+    ```
+2.  Edit the `.env` file and provide the necessary API keys and configuration:
+    - `SERPAPI_API_KEY`: Required for fetching academic paper search results.
+    - `GCS_BUCKET_NAME`: Required for storing the processed Markdown files.
+    - `GCS_PROJECT` (Optional): Your Google Cloud project ID if not using default ADC.
+    - `GCS_SERVICE_ACCOUNT_FILE` (Optional): Path to your GCS service account key file if using this authentication method.
+    - `PLAYWRIGHT_MCP_URL` (Optional): URL of your Playwright MCP server if needed for scraping web content (defaults to `http://localhost:8070/extract`).
+
+### Running the Pipeline
+
+Ensure you have installed dependencies, including the main project in editable mode (`uv pip install -e .`).
+
+Run the dataset building pipeline using the script defined in `pyproject.toml`:
+
+```bash
+uv run build-dataset
+```
+
+The script will process the topics defined in `app/build_dataset/main.py`, fetch data, process it using Markitdown, and attempt to store the results in the configured GCS bucket. Check the logs for progress and any errors.
 
 ## Development
 
