@@ -7,10 +7,10 @@ import logging
 from datetime import datetime
 import re
 import math # Import math for log scaling
+from pathlib import Path # Import Path
+from markitdown import Markitdown
 
 from .schemas import InitialSearchResult, FullContentData, ProcessedContent
-# Assuming MarkItDown is available or we'll use a wrapper
-# from markitdown import MarkItDownConverter # Placeholder
 
 logger = logging.getLogger(__name__)
 
@@ -18,8 +18,7 @@ def calculate_weighted_quality_score(result: InitialSearchResult) -> float:
     """
     Calculates a weighted quality score for an initial search result.
 
-    This is a placeholder implementation based on the plan.
-    Weights and criteria should be refined based on data analysis.
+    Incorporates relevance (keyword-based), recency, source authority, and citation count.
 
     Args:
         result: An InitialSearchResult object.
@@ -37,32 +36,35 @@ def calculate_weighted_quality_score(result: InitialSearchResult) -> float:
     }
 
     # Relevance (simple check: query terms in title/snippet)
-    # This is a very basic relevance score. A more advanced approach
-    # would involve vector embeddings or keyword extraction.
     relevance_score = 0.0
-    if result.title and result.original_metadata.research_topic.lower() in result.title.lower():
-         relevance_score += 0.5
-    if result.snippet and result.original_metadata.research_topic.lower() in result.snippet.lower():
-         relevance_score += 0.5
-    # Normalize to 0-1 (basic)
-    relevance_score = min(relevance_score, 1.0)
+    # Safely access nested dictionary for research_topic
+    topic = ""
+    if result.original_metadata and isinstance(result.original_metadata, dict):
+         topic = result.original_metadata.get("research_topic", "").lower()
+
+    if topic:
+        if result.title and topic in result.title.lower():
+             relevance_score += 0.5
+        if result.snippet and topic in result.snippet.lower():
+             relevance_score += 0.5
+        relevance_score = min(relevance_score, 1.0)
+    else:
+        logger.warning(f"Research topic missing or inaccessible in original_metadata for relevance scoring: {result.link}")
+
 
     # Recency (simple: score decreases with age)
     recency_score = 0.0
     if result.publication_date_str:
         try:
-            # Attempt to parse date string. This is highly dependent on SerpAPI format.
-            # Need to inspect actual SerpAPI results to implement robust parsing.
-            # Placeholder: Assume a simple year extraction or similar.
             year_match = re.search(r'\b(\d{4})\b', result.publication_date_str)
             if year_match:
                 year = int(year_match.group(1))
                 current_year = datetime.now().year
-                age = current_year - year
-                # Simple inverse relationship with age, capped
+                age = max(0, current_year - year) # Ensure age is not negative
                 recency_score = max(0, 1.0 - (age / 10.0)) # 10 years old gets 0 score
             else:
                  logger.warning(f"Could not parse year from date string: {result.publication_date_str}")
+                 recency_score = 0.1 # Assign small score if year cannot be parsed
         except Exception as e:
             logger.warning(f"Error parsing date string '{result.publication_date_str}': {e}")
             recency_score = 0.1 # Small score if date parsing fails but string exists
@@ -81,7 +83,7 @@ def calculate_weighted_quality_score(result: InitialSearchResult) -> float:
             source_authority_score = 0.3 # Default for unknown sources
 
     # Citation Score (Logarithmic scaling, capped)
-    # Using log10: 10 citations -> 0.33, 100 -> 0.66, 1000 -> 1.0
+    # Using log10: 10 citations -> ~0.33, 100 -> ~0.66, 1000 -> ~1.0
     citation_score = 0.0
     if result.citation_count is not None and result.citation_count > 0:
         # Add 1 to handle log10(1) = 0 case smoothly, scale by log10(1001) which is approx 3
@@ -89,7 +91,7 @@ def calculate_weighted_quality_score(result: InitialSearchResult) -> float:
         citation_score = min(1.0, math.log10(result.citation_count + 1) / math.log10(1001))
     elif result.citation_count == 0:
          citation_score = 0.0
-    else: # None case
+    else: # None case (citation count unknown)
          citation_score = 0.1 # Assign a small default score if citation count is unknown
 
     # Combine scores using weights
@@ -124,13 +126,17 @@ def rank_initial_results(
         return []
 
     # Calculate score for each result
+    scored_results = []
     for result in results:
+        # Calculate score and add it to the object
         result.quality_score = calculate_weighted_quality_score(result)
+        scored_results.append(result)
+
 
     # Sort by score in descending order
-    ranked_results = sorted(results, key=lambda x: x.quality_score if x.quality_score is not None else -1, reverse=True)
+    ranked_results = sorted(scored_results, key=lambda x: x.quality_score if x.quality_score is not None else -1, reverse=True)
 
-    logger.info(f"Ranked {len(results)} results. Top {min(top_n, len(results))} selected.")
+    logger.info(f"Ranked {len(results)} results. Top {min(top_n, len(ranked_results))} selected.")
 
     # Return top N
     return ranked_results[:top_n]
@@ -139,36 +145,50 @@ def convert_content_to_markdown(
     full_content_data: FullContentData
 ) -> Optional[ProcessedContent]:
     """
-    Converts raw content (HTML/PDF text) into structured markdown, initially using MarkItDown.
+    Converts raw content (from HTML string or PDF file path) into structured markdown
+    using the Markitdown library.
 
     Args:
-        full_content_data: A FullContentData object containing raw content.
+        full_content_data: A FullContentData object containing either raw_content (HTML)
+                           or file_path (PDF).
 
     Returns:
-        A ProcessedContent object, or None if processing fails.
+        A ProcessedContent object, or None if processing fails or Markitdown is unavailable.
     """
-    if not full_content_data.raw_content:
-        logger.warning(f"No raw content provided for processing URL: {full_content_data.source_url}")
-        return None
+
+    structured_markdown = None
+    input_source_description = "" # For logging
 
     try:
-        # Placeholder for MarkItDown integration
-        # This part needs the actual MarkItDown library or a wrapper.
-        # Assuming MarkItDownConverter takes raw text and returns markdown.
-        # converter = MarkItDownConverter() # Example instantiation
-        # structured_markdown = converter.convert(full_content_data.raw_content)
+        # Instantiate the converter
+        converter = Markitdown(enable_plugins=False)
 
-        # For now, a simple placeholder: just return the raw content as markdown
-        structured_markdown = f"# Content from {full_content_data.source_url}\n\n" + full_content_data.raw_content[:2000] + "...\n\n[Full content truncated for example]" # Truncate for example
+        if full_content_data.file_path and full_content_data.content_type == "pdf":
+            input_source_description = f"PDF file: {full_content_data.file_path}"
+            logger.info(f"Processing {input_source_description}")
+            structured_markdown = converter.convert(full_content_data.file_path)
 
-        # Attempt to extract title, authors, etc. from the raw content or metadata
-        # This is a complex task and might require more sophisticated parsing or an LLM.
-        # For now, populate from original metadata.
+        elif full_content_data.raw_content and full_content_data.content_type == "html":
+            input_source_description = f"HTML raw content from: {full_content_data.source_url}"
+            logger.info(f"Processing {input_source_description}")
+            # Assuming Markitdown().convert can handle raw HTML string
+            structured_markdown = converter.convert(full_content_data.raw_content)
+        else:
+            logger.warning(f"No suitable content (PDF path or HTML raw_content) found for URL: {full_content_data.source_url}")
+            return None
+
+        if not structured_markdown:
+             logger.error(f"Markitdown conversion returned empty result for {input_source_description}")
+             return None
+
+        # --- Metadata Extraction (Placeholder) ---
+        # Markitdown might extract some metadata, or we might need other tools/LLMs.
+        # For now, populate primarily from original metadata.
         title = full_content_data.original_metadata.title
-        authors = None # MarkItDown might help extract this, or need custom logic
+        authors = None # Placeholder
         publication_date = full_content_data.original_metadata.publication_date_str
         abstract = full_content_data.original_metadata.snippet # Use snippet as abstract placeholder
-        keywords = None # Could potentially extract from content
+        keywords = None # Placeholder
 
         processed_content = ProcessedContent(
             source_url=full_content_data.source_url,
@@ -178,13 +198,13 @@ def convert_content_to_markdown(
             publication_date=publication_date,
             abstract=abstract,
             keywords=keywords,
-            full_text_markdown=structured_markdown
+            full_text_markdown=structured_markdown.text_content
         )
-        logger.info(f"Successfully processed content for URL: {full_content_data.source_url}")
+        logger.info(f"Successfully processed content using Markitdown for URL: {full_content_data.source_url}")
         return processed_content
 
     except Exception as e:
-        logger.error(f"Error processing content for URL {full_content_data.source_url}: {e}")
+        logger.exception(f"Error processing content with Markitdown for {input_source_description}: {e}")
         return None
 
 # Example usage (for testing purposes)
@@ -197,6 +217,7 @@ def convert_content_to_markdown(
 #             snippet="This paper discusses new methods for evaluating RAG pipelines.",
 #             source_name="arxiv.org",
 #             publication_date_str="2024",
+#             citation_count=150,
 #             original_metadata={"research_topic": "RAG evaluation"} # Add research_topic for relevance scoring
 #         ),
 #         InitialSearchResult(
@@ -205,6 +226,7 @@ def convert_content_to_markdown(
 #             snippet="An early paper on Retrieval Augmented Generation.",
 #             source_name="Some Conference",
 #             publication_date_str="2019",
+#             citation_count=5,
 #             original_metadata={"research_topic": "RAG evaluation"}
 #         ),
 #         InitialSearchResult(
@@ -213,6 +235,7 @@ def convert_content_to_markdown(
 #             snippet="A simple guide to RAG evaluation metrics.",
 #             source_name="Medium Blog",
 #             publication_date_str="2023-10-01",
+#             citation_count=None, # Unknown citations
 #             original_metadata={"research_topic": "RAG evaluation"}
 #         ),
 #     ]
@@ -221,15 +244,44 @@ def convert_content_to_markdown(
 #     for r in ranked:
 #         print(f"- {r.title} (Score: {r.quality_score:.2f})")
 
-#     # Example of processing (requires dummy FullContentData)
-#     # dummy_full_content = FullContentData(
-#     #     source_url="http://example.com/dummy",
-#     #     original_metadata=sample_results[0], # Use one of the sample results
-#     #     raw_content="<html><body><h1>Test Title</h1><p>Some content here.</p></body></html>",
-#     #     content_type="html"
-#     # )
-#     # processed = convert_content_to_markdown(dummy_full_content) # Updated function name here
-#     # if processed:
-#     #     print("\nProcessed Content:")
-#     #     print(f"Title: {processed.title}")
-#     #     print(f"Markdown:\n{processed.full_text_markdown[:500]}...")
+#     # Example of processing (requires dummy FullContentData and Markitdown installed)
+#     # if Markitdown:
+#     #     dummy_html_content = FullContentData(
+#     #         source_url="http://example.com/dummy_html",
+#     #         original_metadata=sample_results[0], # Use one of the sample results
+#     #         raw_content="<html><body><h1>Test Title HTML</h1><p>Some content here.</p></body></html>",
+#     #         content_type="html",
+#     #         download_successful=True
+#     #     )
+#     #     processed_html = convert_content_to_markdown(dummy_html_content)
+#     #     if processed_html:
+#     #         print("\nProcessed HTML Content:")
+#     #         print(f"Title: {processed_html.title}")
+#     #         print(f"Markdown:\n{processed_html.full_text_markdown[:500]}...")
+#     #     else:
+#     #         print("\nHTML processing failed.")
+
+#         # Create a dummy PDF file for testing
+#         # dummy_pdf_path = Path("./dummy_test.pdf")
+#         # try:
+#         #     # You'd need a library like reportlab to create a real PDF
+#         #     # For simplicity, just create an empty file for the test structure
+#         #     dummy_pdf_path.touch()
+#         #     dummy_pdf_content = FullContentData(
+#         #         source_url="http://example.com/dummy_pdf",
+#         #         original_metadata=sample_results[1],
+#         #         file_path=dummy_pdf_path, # Provide the file path
+#         #         raw_content=None, # Raw content is None for PDF path input
+#         #         content_type="pdf",
+#         #         download_successful=True
+#         #     )
+#         #     processed_pdf = convert_content_to_markdown(dummy_pdf_content)
+#         #     if processed_pdf:
+#         #         print("\nProcessed PDF Content:")
+#         #         print(f"Title: {processed_pdf.title}")
+#         #         print(f"Markdown:\n{processed_pdf.full_text_markdown[:500]}...")
+#         #     else:
+#         #         print("\nPDF processing failed.")
+#         # finally:
+#         #      if dummy_pdf_path.exists():
+#         #          dummy_pdf_path.unlink() # Clean up dummy file
