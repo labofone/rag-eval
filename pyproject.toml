@@ -14,6 +14,14 @@ dependencies = [
     "ragas>=0.2.15",
     "redis>=5.2.1",
     "uvicorn>=0.34.2",
+    "httpx>=0.28.1", # Moved from dev
+    "serpapi",
+    "google-cloud-storage",
+    "python-dotenv",
+    "langchain",
+    "langgraph",
+    "pydantic-settings",
+    "markitdown[all]",
 ]
 
 [dependency-groups]
@@ -22,6 +30,6 @@ dev = [
     "pytest>=8.3.5",
     "pytest-cov>=6.1.1",
     "ruff>=0.11.7",
-    "httpx>=0.28.1",
+    # httpx>=0.28.1, # Moved to main dependencies
     "pytest-mock>=3.14.0",
 ]
