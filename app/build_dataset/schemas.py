@@ -2,6 +2,7 @@
 Pydantic models for structuring data within the buildDataset feature.
 """
 from typing import List, Dict, Optional, Any
+from pathlib import Path # Import Path
 from pydantic import BaseModel, HttpUrl
 
 class InitialSearchResult(BaseModel):
@@ -13,6 +14,7 @@ class InitialSearchResult(BaseModel):
     snippet: Optional[str] = None
     source_name: Optional[str] = None # e.g., "arxiv.org", "ACM Digital Library"
     publication_date_str: Optional[str] = None # Raw date string from source
+    citation_count: Optional[int] = None # Parsed citation count
     # Add other relevant metadata fields from SerpAPI if available
     raw_serpapi_data: Optional[Dict[str, Any]] = None # Store the full SerpAPI result for the item
     quality_score: Optional[float] = None # To be populated during ranking
@@ -23,7 +25,8 @@ class FullContentData(BaseModel):
     """
     source_url: HttpUrl
     original_metadata: InitialSearchResult # Metadata from the initial search
-    raw_content: str # The full text content (e.g., from PDF or HTML)
+    file_path: Optional[Path] = None # Path to downloaded file (e.g., PDF)
+    raw_content: Optional[str] = None # The full text content (e.g., from HTML or extracted from PDF)
     content_type: str # e.g., "pdf", "html"
     download_successful: bool = True
     error_message: Optional[str] = None
