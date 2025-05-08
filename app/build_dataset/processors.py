@@ -6,6 +6,7 @@ from typing import List, Dict, Any, Optional
 import logging
 from datetime import datetime
 import re
+import math # Import math for log scaling
 
 from .schemas import InitialSearchResult, FullContentData, ProcessedContent
 # Assuming MarkItDown is available or we'll use a wrapper
@@ -27,10 +28,12 @@ def calculate_weighted_quality_score(result: InitialSearchResult) -> float:
         A float representing the quality score. Higher is better.
     """
     score = 0.0
+    # Adjusted weights to include citations
     weights = {
-        "relevance": 0.5, # How well snippet/title matches query
-        "recency": 0.3,   # More recent is better
-        "source_authority": 0.2 # Based on source_name (e.g., arxiv.org, reputable journal)
+        "relevance": 0.4,        # How well snippet/title matches query (semantic match preferred later)
+        "recency": 0.2,          # More recent is better
+        "source_authority": 0.1, # Based on source_name (e.g., arxiv.org, reputable journal)
+        "citations": 0.3         # Importance of citation count
     }
 
     # Relevance (simple check: query terms in title/snippet)
@@ -77,12 +80,28 @@ def calculate_weighted_quality_score(result: InitialSearchResult) -> float:
         else:
             source_authority_score = 0.3 # Default for unknown sources
 
+    # Citation Score (Logarithmic scaling, capped)
+    # Using log10: 10 citations -> 0.33, 100 -> 0.66, 1000 -> 1.0
+    citation_score = 0.0
+    if result.citation_count is not None and result.citation_count > 0:
+        # Add 1 to handle log10(1) = 0 case smoothly, scale by log10(1001) which is approx 3
+        # This makes 1 citation have a small score, 1000 citations approach 1.0
+        citation_score = min(1.0, math.log10(result.citation_count + 1) / math.log10(1001))
+    elif result.citation_count == 0:
+         citation_score = 0.0
+    else: # None case
+         citation_score = 0.1 # Assign a small default score if citation count is unknown
+
     # Combine scores using weights
     score = (relevance_score * weights["relevance"] +
              recency_score * weights["recency"] +
-             source_authority_score * weights["source_authority"])
+             source_authority_score * weights["source_authority"] +
+             citation_score * weights["citations"])
 
-    logger.debug(f"Calculated score for '{result.title}': {score:.2f} (Rel: {relevance_score:.2f}, Rec: {recency_score:.2f}, Auth: {source_authority_score:.2f})")
+    logger.debug(
+        f"Calculated score for '{result.title}': {score:.2f} "
+        f"(Rel: {relevance_score:.2f}, Rec: {recency_score:.2f}, Auth: {source_authority_score:.2f}, Cit: {citation_score:.2f})"
+    )
 
     return score
 
