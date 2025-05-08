@@ -21,7 +21,7 @@ dependencies = [
     "langchain",
     "langgraph",
     "pydantic-settings",
-    "markitdown[all]",
+    "markitdown[pdf]",
 ]
 
 [dependency-groups]
