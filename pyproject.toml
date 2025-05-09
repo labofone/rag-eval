@@ -16,7 +16,7 @@ dependencies = [
     "uvicorn>=0.34.2",
 ]
 
-[dependency-groups]
+[project.optional-dependencies]
 dev = [
     "nox>=2025.2.9",
     "pytest>=8.3.5",
@@ -24,6 +24,7 @@ dev = [
     "ruff>=0.11.7",
     "httpx>=0.28.1",
     "pytest-mock>=3.14.0",
+    "pre-commit>=3.0",
 ]
 
 [tool.ruff]
