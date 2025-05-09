@@ -25,3 +25,8 @@ dev = [
     "httpx>=0.28.1",
     "pytest-mock>=3.14.0",
 ]
+
+[tool.ruff]
+line-length = 120
+select = ["E", "F", "B", "I", "N", "UP", "ANN", "ARG", "C4", "DTZ", "EM", "ERA", "PD", "PGH", "PIE", "PL", "PT", "PTH", "RET", "RSE", "RUF", "SIM", "SLF", "TCH", "TID", "TRY"]
+ignore = ["ANN101", "ANN102"]  # Allow non-typed self/cls
