@@ -1,22 +1,28 @@
-.PHONY: install format lint test run build
+.PHONY: init install format lint test run build update
+
+init:
+	curl -LsSf https://astral.sh/uv/install.sh | sh
+	$(MAKE) install
 
 install:
-	python -m uv pip install -e ".[dev]"
-	pre-commit install
+	uv pip install -e ".[dev]"
+	uv run pre-commit install
 
 format:
-	ruff check . --fix
-	ruff format .
+	uv run ruff format .
 
 lint:
-	ruff check .
-	mypy .
+	uv run ruff check . --fix
+	uv run mypy .
 
 test:
-	pytest -v --cov=app --cov-report=term-missing
+	uv run pytest -v --cov=app --cov-report=term-missing
 
 run:
-	uvicorn app.main:app --reload
+	uv run uvicorn app.main:app --reload
 
 build:
 	docker build -t rag-eval .
+
+update:
+	uv pip install -e ".[dev]"
