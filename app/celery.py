@@ -1,17 +1,15 @@
-from celery import Celery
-from config import settings
+from celery import Celery  # type: ignore[import-untyped]
+
+from app.config import settings
 
 celery_app = Celery(
-    'tasks',
-    broker=settings.REDIS_URL,
-    backend=settings.REDIS_URL,
-    include=['app.tasks.evaluation']
+    "tasks", broker=str(settings.REDIS_URL), backend=str(settings.REDIS_URL), include=["app.tasks.evaluation"]
 )
 
 celery_app.conf.update(
-    task_serializer='json',
-    accept_content=['json'],
-    result_serializer='json',
-    timezone='UTC',
+    task_serializer="json",
+    accept_content=["json"],
+    result_serializer="json",
+    timezone="UTC",
     enable_utc=True,
 )
