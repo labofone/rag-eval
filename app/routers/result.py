@@ -1,7 +1,9 @@
 import json
-from fastapi import APIRouter, HTTPException
+
 from celery.result import AsyncResult
+from fastapi import APIRouter, HTTPException
 from redis import Redis
+
 from app.celery import celery_app
 from app.config.settings import settings
 from app.schemas.result import EvaluationResult
@@ -11,8 +13,9 @@ router = APIRouter()
 # Initialize Redis client
 redis_client = Redis.from_url(settings.REDIS_URL)
 
+
 @router.get("/{task_id}", summary="Retrieve evaluation result by task ID", response_model=EvaluationResult)
-async def get_result(task_id: str):
+async def get_result(task_id: str) -> EvaluationResult:
     """
     Retrieves the evaluation result for a given task ID from Redis.
 
@@ -33,8 +36,8 @@ async def get_result(task_id: str):
         try:
             result_dict = json.loads(result_data)
             return EvaluationResult(**result_dict)
-        except json.JSONDecodeError:
-            raise HTTPException(status_code=500, detail="Failed to decode result from Redis")
+        except json.JSONDecodeError as e:
+            raise HTTPException(status_code=500, detail="Failed to decode result from Redis") from e
 
     # If not in Redis, check Celery task status
     task = AsyncResult(task_id, app=celery_app)
@@ -42,9 +45,7 @@ async def get_result(task_id: str):
     if task.ready():
         # Task is ready but result not in Redis (e.g., expired or error during storage)
         if task.successful():
-             raise HTTPException(status_code=404, detail="Result not found in cache (may have expired)")
-        else:
-             raise HTTPException(status_code=500, detail=f"Task failed: {task.result}")
-    else:
-        # Task is still processing
-        raise HTTPException(status_code=202, detail="Task is still processing")
+            raise HTTPException(status_code=404, detail="Result not found in cache (may have expired)")
+        raise HTTPException(status_code=500, detail=f"Task failed: {task.result}")
+    # Task is still processing
+    raise HTTPException(status_code=202, detail="Task is still processing")
