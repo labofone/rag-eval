@@ -1,6 +1,7 @@
-from fastapi import FastAPI, Depends
-from app.routers import evaluate, result
+from fastapi import Depends, FastAPI
+
 from app.dependencies import validate_api_key
+from app.routers import evaluate, result
 
 app = FastAPI()
 
