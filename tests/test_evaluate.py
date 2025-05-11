@@ -1,8 +1,6 @@
-import pytest
+from fastapi import status
 from httpx import AsyncClient
-
-# Assuming your FastAPI app is in app/main.py
-from app.main import app
+import pytest
 
 # Placeholder API Key for testing
 TEST_API_KEY = "test_api_key"
@@ -14,29 +12,44 @@ BASE_PAYLOAD = {
     "response": "The capital of France is Paris.",
 }
 
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "metrics, headers, expected_status, expected_response_detail",
+    ("metrics", "headers", "expected_status", "expected_response_detail"),
     [
         # Test case for all metrics with valid API key
-        (["correctness", "faithfulness", "context_relevancy"], {"X-API-Key": TEST_API_KEY}, 200, None),
+        (["correctness", "faithfulness", "context_relevancy"], {"X-API-Key": TEST_API_KEY}, status.HTTP_200_OK, None),
         # Test case for a subset of metrics with valid API key
-        (["answer_relevancy"], {"X-API-Key": TEST_API_KEY}, 200, None),
+        (["answer_relevancy"], {"X-API-Key": TEST_API_KEY}, status.HTTP_200_OK, None),
         # Test case for no API key
-        (["correctness", "faithfulness"], None, 401, "Not authenticated"),
+        (["correctness", "faithfulness"], None, status.HTTP_401_UNAUTHORIZED, "Not authenticated"),
         # Test case for invalid API key
-        (["correctness", "faithfulness"], {"X-API-Key": "invalid_key"}, 401, "Invalid API Key"),
-    ]
+        (
+            ["correctness", "faithfulness"],
+            {"X-API-Key": "invalid_key"},
+            status.HTTP_401_UNAUTHORIZED,
+            "Invalid API Key",
+        ),
+    ],
 )
-async def test_evaluate_batch(metrics, headers, expected_status, expected_response_detail):
-    async with AsyncClient(app=app, base_url="http://test") as ac:
-        payload = BASE_PAYLOAD.copy()
-        payload["metrics"] = metrics
-        response = await ac.post("/evaluate/batch", json=payload, headers=headers)
+async def test_evaluate_batch(
+    metrics: list[str],
+    headers: dict[str, str] | None,
+    expected_status: int,
+    expected_response_detail: str | None,
+) -> None:
+    async with AsyncClient(base_url="http://test") as ac:
+        payload_data = {
+            "query": BASE_PAYLOAD["query"],
+            "context": BASE_PAYLOAD["context"],
+            "response": BASE_PAYLOAD["response"],
+            "metrics": metrics,
+        }
+        response = await ac.post("/evaluate/batch", json=payload_data, headers=headers)
 
         assert response.status_code == expected_status
 
-        if expected_status == 200:
+        if expected_status == status.HTTP_200_OK:
             assert "task_id" in response.json()
         else:
             assert response.json() == {"detail": expected_response_detail}
