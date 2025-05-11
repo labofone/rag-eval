@@ -5,13 +5,14 @@ from fastapi import APIRouter, HTTPException
 from redis import Redis
 
 from app.celery import celery_app
-from app.config.settings import settings
+from app.config import settings  # Corrected import
 from app.schemas.result import EvaluationResult
 
 router = APIRouter()
 
 # Initialize Redis client
-redis_client = Redis.from_url(settings.REDIS_URL)
+redis_url_str: str = str(settings.REDIS_URL)
+redis_client = Redis.from_url(redis_url_str)
 
 
 @router.get("/{task_id}", summary="Retrieve evaluation result by task ID", response_model=EvaluationResult)

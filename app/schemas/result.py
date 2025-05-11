@@ -1,9 +1,10 @@
-from pydantic import BaseModel
 from datetime import datetime
-from typing import Dict, Any
+
+from pydantic import BaseModel
+
 
 class EvaluationResult(BaseModel):
     task_id: str
-    metrics: Dict[str, float]
+    metrics: dict[str, float]
     created_at: datetime
     status: str = "completed"
