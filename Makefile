@@ -1,4 +1,4 @@
-.PHONY: init install format lint test run build update
+.PHONY: init install format lint test run build update clean
 
 init:
 	curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -26,3 +26,8 @@ build:
 
 update:
 	uv pip install -e ".[dev]"
+
+clean:
+	rm -rf __pycache__ .pytest_cache .mypy_cache .ruff_cache .coverage .coverage.*
+	rm -rf dist build
+	rm -rf *.egg-info
