@@ -20,14 +20,16 @@ jobs:
         run: |
           echo "value=$(sha256sum pyproject.toml | cut -d ' ' -f 1)" >> $GITHUB_OUTPUT
 
-      - name: Install uv
-        run: make init
-
       - name: Cache virtual environment
+        id: cache-venv
         uses: actions/cache@v3
         with:
           path: .venv
           key: venv-${{ runner.os }}-${{ steps.cache-key.outputs.value }}
+
+      - name: Install dependencies
+        if: steps.cache-venv.outputs.cache-hit != 'true'
+        run: make init
 
       - name: Run linting
         run: make lint
