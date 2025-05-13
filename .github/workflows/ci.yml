@@ -29,32 +29,8 @@ jobs:
           path: .venv
           key: venv-${{ runner.os }}-${{ steps.cache-key.outputs.value }}
 
-  lint:
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Restore virtual environment
-        uses: actions/cache@v3
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ needs.setup.outputs.cache-key }}
-
       - name: Run linting
         run: make lint
-
-  test:
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Restore virtual environment
-        uses: actions/cache@v3
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ needs.setup.outputs.cache-key }}
 
       - name: Run tests
         run: make test
