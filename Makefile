@@ -2,6 +2,7 @@
 
 init:
 	curl -LsSf https://astral.sh/uv/install.sh | sh
+	uv venv
 	$(MAKE) install
 
 install:
@@ -16,7 +17,7 @@ lint:
 	uv run mypy .
 
 test:
-	uv run pytest -v --cov=app --cov-report=term-missing
+	uv run pytest -v --cov=app --cov-report=term-missing --cov-branch
 
 run:
 	uv run uvicorn app.main:app --reload
