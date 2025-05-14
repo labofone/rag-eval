@@ -1,3 +1,8 @@
+"""Router for retrieving evaluation results.
+
+This module provides endpoints for retrieving RAG evaluation results from Redis storage.
+"""
+
 import json
 
 from celery.result import AsyncResult
@@ -17,8 +22,7 @@ redis_client = Redis.from_url(redis_url_str)
 
 @router.get("/{task_id}", summary="Retrieve evaluation result by task ID", response_model=EvaluationResult)
 async def get_result(task_id: str) -> EvaluationResult:
-    """
-    Retrieves the evaluation result for a given task ID from Redis.
+    """Retrieve the evaluation result for a given task ID from Redis.
 
     Args:
         task_id (str): The ID of the evaluation task.
@@ -28,6 +32,7 @@ async def get_result(task_id: str) -> EvaluationResult:
 
     Raises:
         HTTPException: If the task result is not found or still processing.
+
     """
     # Attempt to fetch result from Redis
     result_data = redis_client.get(task_id)

@@ -1,3 +1,9 @@
+"""Celery configuration and task management.
+
+This module sets up the Celery application for asynchronous task processing,
+including RAG evaluation tasks.
+"""
+
 from celery import Celery  # type: ignore[import-untyped]
 
 from app.config import settings

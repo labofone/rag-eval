@@ -1,3 +1,9 @@
+"""Main FastAPI application entrypoint.
+
+This module creates and configures the FastAPI application instance,
+including API routers and dependency injections.
+"""
+
 from fastapi import Depends, FastAPI
 
 from app.dependencies import validate_api_key

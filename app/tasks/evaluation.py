@@ -1,3 +1,8 @@
+"""Celery tasks for RAG pipeline evaluation.
+
+This module provides asynchronous tasks for evaluating RAG pipeline results using Ragas metrics.
+"""
+
 from datetime import UTC, datetime, timedelta  # Added UTC
 import json
 
@@ -16,6 +21,16 @@ redis_client = Redis.from_url(str(settings.REDIS_URL))  # Added str()
 
 
 class EvaluationTaskPayload(BaseModel):
+    """Schema for RAG evaluation task input.
+
+    Attributes:
+        query: User query that was passed to the RAG system
+        context: Context retrieved by the RAG system
+        response: Generated response to evaluate
+        metrics_list: List of metric names to evaluate
+
+    """
+
     query: str
     context: str
     response: str
@@ -26,6 +41,20 @@ class EvaluationTaskPayload(BaseModel):
 def evaluate_rag_pipeline(  # Added type hints
     self: Task, payload: EvaluationTaskPayload, simulate_failure: bool = False
 ) -> str:
+    """Evaluate RAG pipeline output using requested metrics.
+
+    Args:
+        self: The Celery task instance
+        payload: The evaluation task payload containing query, context, response and metrics
+        simulate_failure: If True, raises an error to simulate task failure
+
+    Returns:
+        str: The ID of the task which can be used to retrieve results
+
+    Raises:
+        ValueError: If simulate_failure is True
+
+    """
     if simulate_failure:
         raise ValueError
 
