@@ -34,7 +34,7 @@ dev = [
 line-length = 120
 
 [tool.ruff.lint]
-select = ["E", "F", "B", "I", "N", "UP", "ANN", "ARG", "C4", "DTZ", "EM", "ERA", "PD", "PGH", "PIE", "PL", "PT", "PTH", "RET", "RSE", "RUF", "SIM", "SLF", "TCH", "TID", "TRY"]
+select = ["E", "F", "B", "I", "N", "UP", "ANN", "ARG", "C4", "DTZ", "EM", "ERA", "PD", "PGH", "PIE", "PL", "PT", "PTH", "RET", "RSE", "RUF", "SIM", "SLF", "TCH", "TID", "TRY", "S", "D"]
 ignore = ["EM101"]
 
 [tool.ruff.lint.isort]
