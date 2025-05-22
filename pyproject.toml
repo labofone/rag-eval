@@ -37,6 +37,10 @@ line-length = 120
 select = ["E", "F", "B", "I", "N", "UP", "ANN", "ARG", "C4", "DTZ", "EM", "ERA", "PD", "PGH", "PIE", "PL", "PT", "PTH", "RET", "RSE", "RUF", "SIM", "SLF", "TCH", "TID", "TRY", "S", "D"]
 ignore = ["EM101", "S101"]
 
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["D"]
+"tests/**.py" = ["D100"]
+
 [tool.ruff.lint.isort]
 force-sort-within-sections = true
 
