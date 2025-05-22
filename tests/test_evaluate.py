@@ -1,3 +1,9 @@
+"""Tests for the evaluation endpoints.
+
+This module contains tests for the RAG pipeline evaluation API endpoints,
+including authentication and various metric combinations.
+"""
+
 from fastapi import status
 from httpx import AsyncClient
 import pytest
@@ -38,6 +44,21 @@ async def test_evaluate_batch(
     expected_status: int,
     expected_response_detail: str | None,
 ) -> None:
+    """Test the batch evaluation endpoint with different metrics and authentication scenarios.
+
+    Args:
+        metrics: List of evaluation metrics to request
+        headers: Request headers including API key
+        expected_status: Expected HTTP status code
+        expected_response_detail: Expected error detail message if any
+
+    Test cases:
+        - All metrics with valid API key
+        - Subset of metrics with valid API key
+        - No API key (unauthorized)
+        - Invalid API key
+
+    """
     async with AsyncClient(base_url="http://test") as ac:
         payload_data = {
             "query": BASE_PAYLOAD["query"],
