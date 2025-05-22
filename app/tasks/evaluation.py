@@ -41,6 +41,20 @@ class EvaluationTaskPayload(BaseModel):
 def evaluate_rag_pipeline(  # Added type hints
     self: Task, payload: EvaluationTaskPayload, simulate_failure: bool = False
 ) -> str:
+    """Run RAG pipeline evaluation using specified metrics.
+
+    Args:
+        self: The Celery task instance
+        payload: Request payload containing query, context, response and metrics to evaluate
+        simulate_failure: If True, raises an error (used for testing)
+
+    Returns:
+        str: The task ID for retrieving the evaluation results
+
+    Raises:
+        ValueError: When simulate_failure is True
+
+    """
     """Evaluate RAG pipeline output using requested metrics.
 
     Args:
