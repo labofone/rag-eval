@@ -14,9 +14,10 @@ dependencies = [
     "ragas>=0.2.15",
     "redis>=5.2.1",
     "uvicorn>=0.34.2",
+    "pydantic>=2.0.0",
 ]
 
-[dependency-groups]
+[project.optional-dependencies]
 dev = [
     "nox>=2025.2.9",
     "pytest>=8.3.5",
@@ -24,4 +25,31 @@ dev = [
     "ruff>=0.11.7",
     "httpx>=0.28.1",
     "pytest-mock>=3.14.0",
+    "pre-commit>=3.0",
+    "mypy>=1.0",
+    "types-redis>=4.6.0.7" # Added for redis stubs
 ]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "B", "I", "N", "UP", "ANN", "ARG", "C4", "DTZ", "EM", "ERA", "PD", "PGH", "PIE", "PL", "PT", "PTH", "RET", "RSE", "RUF", "SIM", "SLF", "TCH", "TID", "TRY", "S", "D"]
+ignore = ["EM101", "S101"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["D"]
+"tests/**.py" = ["D100"]
+
+[tool.ruff.lint.isort]
+force-sort-within-sections = true
+
+[tool.mypy]
+plugins = "pydantic.mypy"
+exclude = [
+    "build/"
+]
+
+[[tool.mypy.overrides]]
+module = "celery.*"
+ignore_missing_imports = true

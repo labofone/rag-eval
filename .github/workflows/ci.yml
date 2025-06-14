@@ -1,0 +1,30 @@
+name: CI Pipeline
+
+on: [pull_request]
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      cache-key: ${{ steps.cache-key.outputs.value }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Get cache key
+        id: cache-key
+        run: |
+          echo "value=$(sha256sum pyproject.toml | cut -d ' ' -f 1)" >> $GITHUB_OUTPUT
+
+      - name: Install dependencies
+        run: make init
+
+      - name: Run linting
+        run: make lint
+
+      - name: Run tests
+        run: make test
